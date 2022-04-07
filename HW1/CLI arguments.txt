@@ -1,0 +1,35 @@
+CLI Arguments
+
+
+
+python .\G055HW1.py 4 0 Italy .\sample_50.csv
+
+Number of rows = 50
+Product-Customer Pairs = 11
+productPopularity1: 
+Product: 21733 Popularity: 2; Product: 22632 Popularity: 1; Product: 22960 Popularity: 4; Product: 22961 Popularity: 2; Product: 22969 Popularity: 1; Product: 84879 Popularity: 1; 
+productPopularity2: 
+Product: 21733 Popularity: 2; Product: 22632 Popularity: 1; Product: 22960 Popularity: 4; Product: 22961 Popularity: 2; Product: 22969 Popularity: 1; Product: 84879 Popularity: 1; 
+
+
+
+
+
+python .\G055HW1.py 4 5 all .\sample_10000.csv
+
+Number of rows = 10000
+Product-Customer Pairs = 9104
+Top 5 Products and their Popularities
+Product POST Popularity 91; Product 22423 Popularity 91; Product 85123A Popularity 86; Product 47566 Popularity 84; Product 85099B Popularity 70; 
+
+
+
+
+
+python .\G055HW1.py 4 5 United_Kingdom .\full_dataset.csv
+
+Number of rows = 406829
+Product-Customer Pairs = 238053
+Top 5 Products and their Popularities
+Product 85123A Popularity 821; Product 22423 Popularity 767; Product 47566 Popularity 659; Product 84879 Popularity 642; Product 22086 Popularity 594; 
+
