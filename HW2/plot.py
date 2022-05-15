@@ -47,7 +47,6 @@ def SeqWeightedOutliers(P,W,k,z,alpha=0):
     while(True):
 
         Z = np.ones(n_points, dtype=bool)
-        # Z = P.copy()
         S = []
         W_z = sum(W)
 
@@ -94,7 +93,7 @@ def SeqWeightedOutliers(P,W,k,z,alpha=0):
 
 def ComputeObjective(P,S,z):
     P_array = np.asarray(P)
-    S_array =  np.asarray(S)
+    S_array = np.asarray(S)
     dist_mat = euclidean_distance_matrix(P_array, S_array)
     min_dist = dist_mat.min(1).tolist()
     for x in range(z):
@@ -125,10 +124,7 @@ def plot_cluster(data,solution,outliers,k,z,r):
 
 def main():
 
-    # CHECKING NUMBER OF CMD LINE PARAMETERS
     assert len(sys.argv) == 4, "Usage: python G055HW2.py <file_name> <k> <z>"
-
-    # INPUT READING
 
     data_path = sys.argv[1]
     assert os.path.isfile(data_path), "File or folder not found"
@@ -142,13 +138,10 @@ def main():
     assert z.isdigit(), "z must be an integer"
     z = int(z)
 
-    # input size
-    n = len(inputPoints)
+    print(f'Input size n = {len(inputPoints)}\nNumber of centers k = {k}\nNumber of outliers z = {z}')
 
-    print(f'Input size n = {n}\nNumber of centers k = {k}\nNumber of outliers z = {z}')
-
-    # unit weigtht list
-    weights = np.ones(n)
+    # unit weights list
+    weights = np.ones(len(inputPoints))
 
     start = time.time()
     solution = SeqWeightedOutliers(inputPoints,weights,k,z,0)
@@ -157,8 +150,6 @@ def main():
     objective = ComputeObjective(inputPoints,solution,z)
     
     print(f'Objective function = {objective}\nTime of SeqWeightedOutliers = {executionTime}')
-    print('\nFINE\n')
-    print('solution:\t', solution)
 
     
 if __name__ == "__main__":

@@ -1,104 +1,69 @@
 import sys
 import os
 import time
-import math
-from scipy.spatial import distance_matrix
 import numpy as np
-
-####################################################################
-import pandas as pd
-import matplotlib.pyplot as plt
-####################################################################
 
 
 def readVectorsSeq(filename):
     with open(filename) as f:
         result = [tuple(map(float, i.split(','))) for i in f]
     return result
-    
-    
-def euclidean(point1,point2):
-    res = 0
-    for i in range(len(point1)):
-        diff = (point1[i]-point2[i])
-        res +=  diff*diff
-    return math.sqrt(res)
 
 
-# def dist_matrix(P):
-#     P_array = np.asarray(P)
-#     dist_mat = distance_matrix(P_array, P_array)
-#     print(dist_mat)
+def DistanceMatrix(x,y):
+    diff = np.expand_dims(x, axis=1) - np.expand_dims(y, axis=0)
+    distance_matrix = np.sqrt(np.sum(diff ** 2, axis=-1))
+    return distance_matrix
 
 
-def SeqWeightedOutliers(P,W,k,z,alpha=0):
+def SeqWeightedOutliers(P,W,k,z,alpha):
 
-    # Compute r_min
-    P_array = np.asarray(P[:k+z+1])
-    dist_mat = distance_matrix(P_array, P_array)
-    r = min(dist_mat[np.nonzero(dist_mat)]) /2
+    # Precompute distances
+    distance_matrix = DistanceMatrix(np.asarray(P), np.asarray(P))
 
+    # Compute intial value of r
+    r_matrix = distance_matrix[:k+z+1, :k+z+1]
+    r = min(r_matrix[np.nonzero(r_matrix)]) /2
     initial_r = r
     n_guesses = 1
-    
+
     while(True):
 
-        # P.copy() needed to avoid aliasing
-        Z = P.copy()
+        Z = np.ones(len(P), dtype=bool)
         S = []
-        W_z = sum(W)
+        W_z = np.sum(W)
 
         while(len(S) < k and W_z > 0):
+
             max = 0
-            newcenter = ()
+            newcenter = 0
 
-            # DUBBIO: x in P o Z
-            # stesso risultato, Z leggermente più veloce
-            for x in P:
-                # lista di indici
-                B_z_center = []
-
+            for x in range(len(P)):
+                              
                 # B_z(x,(1+2*alpha)*r)
-                for y in range(len(Z)):
-                    if(euclidean(x,Z[y]) <= (1+2*alpha)*r):
-                        B_z_center.append(y)
+                x_row_dist = distance_matrix[x]
+                candidate_distances = x_row_dist <= (1+2*alpha)*r
+                B_z_center = np.logical_and(candidate_distances, Z)
 
-                ball_weight = 0
-                for i in B_z_center:
-                    ball_weight += W[i]
+                ball_weight = np.sum(W[B_z_center])
+
                 if ball_weight > max:
                     max = ball_weight
                     newcenter = x
-                # print(f'iteration {x}:\t', B_z_center, '\t', ball_weight, '\t', newcenter)
 
-            S.append(newcenter)
-            # print('\nS:\t\t',S)
+            S.append(P[newcenter])
 
             # B_z(newcenter,(3+4*alpha)*r)
-            B_z_outlier = []
-            for y in range(len(Z)):
-                if(euclidean(newcenter,Z[y]) <= (3+4*alpha)*r):
-                    B_z_outlier.append(y)
+            newcenter_row_dist = distance_matrix[newcenter]
+            candidate_distances = newcenter_row_dist <= (3+4*alpha)*r
+            B_z_outlier = np.logical_and(candidate_distances, Z)
 
-            # print(f'B_z out:\t', B_z_outlier)
-            # print(f'\nZ:\t\t',Z,'\nW_z:\t\t', W_z)
-
-            for y in range(len(B_z_outlier)-1,-1,-1):
-                Z.pop(B_z_outlier[y])
-                W_z -= W[B_z_outlier[y]]
-
-            # print(f'\nZ:\t\t',Z,'\nW_z:\t\t', W_z)    
-        # print('\nUSCITI DA WHILE INTERNO\n')
+            # Remove elements of B_z_outlier from Z and subtract their weights from W_z
+            Z = np.logical_xor(B_z_outlier, Z)
+            W_z -= np.sum(W[B_z_outlier])
         
         if W_z <= z:
             print(f'Initial guess = {initial_r}\nFinal guess = {r}\nNumber of guesses = {n_guesses}')
-
-            # Plot Points
-
-            print(P)
-
-            plot_cluster(P,S,Z,k,z,r)
-
             return S
         else:
             r = 2*r
@@ -106,62 +71,15 @@ def SeqWeightedOutliers(P,W,k,z,alpha=0):
 
 
 def ComputeObjective(P,S,z):
-    P_array = np.asarray(P)
-    S_array =  np.asarray(S)
-    dist_mat = distance_matrix(P_array, S_array)
-    min_dist = dist_mat.min(1).tolist()
-    # print(min_dist)
-    # print(dist_mat)
-    for x in range(z):
+    distance_matrix = DistanceMatrix(np.asarray(P), np.asarray(S))
+    min_dist = distance_matrix.min(1).tolist()
+    for i in range(z):
         min_dist.remove(max(min_dist))
     return max(min_dist)
 
 
-# def ComputeObjective(P,S,z):
-#     P_array = np.asarray(P)
-#     S_array = np.asarray(S)
-
-#     dist_mat = distance_matrix(P_array, S_array)
-
-#     flat_dist_mat = dist_mat.flatten()
-
-#     # min_dist = dist_mat.min(1).tolist()
-#     print(dist_mat)
-#     # print(dist_mat)
-#     # for x in range(z):
-#     #     min_dist.remove(max(min_dist))
-#     # print(max(min_dist))
-
-#     return 69
-
-
-####################################################################
-#                           TMP
-def plot_cluster(data,solution,outliers,k,z,r):
-    df = pd.DataFrame(data)
-    s = pd.DataFrame(solution)        
-
-    fig, ax = plt.subplots()
-    ax.scatter(df[0], df[1])
-    ax.scatter(s[0], s[1], color='red')
-    if outliers != []:
-        out = pd.DataFrame(outliers)
-        ax.scatter(out[0], out[1], color='green')
-    for i in range(len(solution)):
-        cir = plt.Circle(solution[i], radius=r*3, color='r',fill=False)
-        ax.set_aspect('equal', adjustable='datalim')
-        ax.add_patch(cir)
-    plt.title(f'k={k}   -   z={z}  -  r={r}')
-    plt.show()
-####################################################################
-
-
 def main():
-
-    # CHECKING NUMBER OF CMD LINE PARAMETERS
     assert len(sys.argv) == 4, "Usage: python G055HW2.py <file_name> <k> <z>"
-
-    # INPUT READING
 
     data_path = sys.argv[1]
     assert os.path.isfile(data_path), "File or folder not found"
@@ -175,13 +93,10 @@ def main():
     assert z.isdigit(), "z must be an integer"
     z = int(z)
 
-    # input size
-    n = len(inputPoints)
+    print(f'Input size n = {len(inputPoints)}\nNumber of centers k = {k}\nNumber of outliers z = {z}')
 
-    print(f'Input size n = {n}\nNumber of centers k = {k}\nNumber of outliers z = {z}')
-
-    # unit weigtht list
-    weights = [1] * n
+    # unit weights list
+    weights = np.ones(len(inputPoints))
 
     start = time.time()
     solution = SeqWeightedOutliers(inputPoints,weights,k,z,0)
@@ -190,8 +105,6 @@ def main():
     objective = ComputeObjective(inputPoints,solution,z)
     
     print(f'Objective function = {objective}\nTime of SeqWeightedOutliers = {executionTime}')
-    print('\nFINE\n')
-    print('solution:\t', solution)
 
     
 if __name__ == "__main__":
