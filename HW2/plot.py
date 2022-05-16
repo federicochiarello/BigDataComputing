@@ -143,6 +143,11 @@ def main():
     # unit weights list
     weights = np.ones(len(inputPoints))
 
+    # inputPoints = [(0.0,0.0,0.0), (0.0,0.5,0.0), (0.0,1.0,0.0), (3.0,3.0,3.0),]
+    # weights = np.ones(len(inputPoints))
+    # weights[2] = 2
+    # weights[3] = 5
+
     start = time.time()
     solution = SeqWeightedOutliers(inputPoints,weights,k,z,0)
     executionTime = (time.time() - start) * 1000.0

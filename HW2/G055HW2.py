@@ -11,6 +11,8 @@ def readVectorsSeq(filename):
 
 
 def DistanceMatrix(x,y):
+    # diff.shape = (|x|, |y|, points_dimensionality)
+    # diff[i,j] = array with the differences between the coordinates of point i and the coordinates of point j
     diff = np.expand_dims(x, axis=1) - np.expand_dims(y, axis=0)
     distance_matrix = np.sqrt(np.sum(diff ** 2, axis=-1))
     return distance_matrix
