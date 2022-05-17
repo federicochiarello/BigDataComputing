@@ -1,7 +1,6 @@
 import sys
 import os
 import time
-import math
 import numpy as np
 
 
@@ -61,9 +60,7 @@ def SeqWeightedOutliers(P,W,k,z,alpha=0):
                 # distances <= (1+2*alpha)*r
                 # including distances with points that might not be in Z
                 center = x_row_dist <= (1+2*alpha)*r
-
                 B_z_center = np.logical_and(center, Z)
-
                 ball_weight = np.sum(W[B_z_center])
 
                 if ball_weight > max:
@@ -101,8 +98,6 @@ def ComputeObjective(P,S,z):
     return max(min_dist)
 
 
-####################################################################
-#                           TMP
 def plot_cluster(data,solution,outliers,k,z,r):
     df = pd.DataFrame(data)
     s = pd.DataFrame(solution)        
@@ -119,7 +114,6 @@ def plot_cluster(data,solution,outliers,k,z,r):
         ax.add_patch(cir)
     plt.title(f'k={k}   -   z={z}  -  r={r}')
     plt.show()
-####################################################################
 
 
 def main():
