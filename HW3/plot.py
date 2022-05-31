@@ -2,6 +2,10 @@ import findspark
 findspark.init()
 
 
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
 # Import Packages
 from pyspark import SparkConf, SparkContext
 import numpy as np
@@ -9,6 +13,29 @@ import time
 import random
 import sys
 import math
+
+
+
+
+def plot_cluster(data,solution,outliers,k,z,r):
+    df = pd.DataFrame(data)
+    s = pd.DataFrame(solution)        
+
+    fig, ax = plt.subplots()
+    ax.scatter(df[0], df[1])
+    ax.scatter(s[0], s[1], color='red')
+    if outliers != []:
+        out = pd.DataFrame(outliers)
+        ax.scatter(out[0], out[1], color='green')
+    for i in range(len(solution)):
+        cir = plt.Circle(solution[i], radius=r*3, color='r',fill=False)
+        ax.set_aspect('equal', adjustable='datalim')
+        ax.add_patch(cir)
+    plt.title(f'k={k}   -   z={z}  -  r={r}')
+    plt.show()
+
+
+
 
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -274,6 +301,10 @@ def SeqWeightedOutliers (points, weights, k, z, alpha):
         
         if W_z <= z:
             print(f'Initial guess = {initial_r}\nFinal guess = {r}\nNumber of guesses = {n_guesses}')
+            
+            P_array = np.asarray(points)
+            plot_cluster(points,S,P_array[Z],k,z,r)
+            
             return S
         else:
             r = 2*r
