@@ -57,6 +57,17 @@ def main():
     print("Time to compute objective function: ", str((end-start)*1000), " ms")
 
 
+    ####################################################################################
+    # REMOVE
+    start = time.time()
+    inputPoints = inputPoints.collect()
+    objective = computeObjective_local(inputPoints, solution, z)
+    end = time.time()
+    print("\nObjective function LOCAL = ", objective)
+    print("Time to compute objective function LOCAL: ", str((end-start)*1000), " ms")
+    ####################################################################################
+
+
 
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -260,7 +271,7 @@ def SeqWeightedOutliers (points, weights, k, z, alpha):
             W_z -= np.sum(weights[B_z_outlier])
         
         if W_z <= z:
-            print('Initial guess = ', initial_r, '\nFinal guess = ', r, '\nNumber of guesses = ', n_guesses)
+            print(f'Initial guess = {initial_r}\nFinal guess = {r}\nNumber of guesses = {n_guesses}')
             return S
         else:
             r = 2*r
