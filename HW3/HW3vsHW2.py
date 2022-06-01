@@ -1,19 +1,18 @@
+# Import Packages
 import findspark
 findspark.init()
-
-
-# Import Packages
 from pyspark import SparkConf, SparkContext
 import numpy as np
 import time
 import random
 import sys
 import math
+import pandas as pd
+import matplotlib.pyplot as plt
+
 
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # MAIN PROGRAM
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def main():
     # Checking number of cmd line parameters
@@ -54,26 +53,118 @@ def main():
     objective = computeObjective(inputPoints, solution, z)
     end = time.time()
     print("Objective function = ", objective)
-    print("Time to compute objective function: ", str((end-start)*1000), " ms")
+    print("Time to compute objective function: ", str((end-start)*1000), " ms\n")
 
+    # SEQUENTIAL ALGORITHM
 
-    ####################################################################################
-    # REMOVE
+    points = readVectorsSeq(filename)
+    weights = np.ones(len(points))
+
     start = time.time()
-    inputPoints = inputPoints.collect()
-    objective = computeObjective_local(inputPoints, solution, z)
+    seq_solution = SeqWeightedOutliers(points, weights, k, z, alpha=0, plot=True)
+    executionTime = (time.time() - start) * 1000.0
+
+    start = time.time()
+    objective = ComputeObjectiveLocal(points,seq_solution,z)
     end = time.time()
-    print("\nObjective function LOCAL = ", objective)
-    print("Time to compute objective function LOCAL: ", str((end-start)*1000), " ms")
-    ####################################################################################
+
+    print(f'Time of SeqWeightedOutliers = {executionTime}\nObjective function = {objective}')
+    print("Time to compute objective function: ", str((end-start)*1000), " ms\n")
+
+    plot_centers(np.asarray(points), solution, seq_solution, k, z)
 
 
 
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # AUXILIARY METHODS
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+
+
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# Method readVectorsSeq
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def readVectorsSeq(filename):
+    with open(filename) as f:
+        result = [tuple(map(float, i.split(','))) for i in f]
+    return result
+
+
+
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# Method plot_center
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def plot_centers(data,centers,seq_centers,k,z):
+
+    # print(f'MR_kCenterOutliers:   {centers}')
+    # print(f'Sequential Algorithm: {seq_centers}')
+
+    common_centers = list(set(centers) & set(seq_centers))
+
+    df = pd.DataFrame(data)
+    s = pd.DataFrame(centers)
+    s_seq = pd.DataFrame(seq_centers)    
+
+    fig, ax = plt.subplots()
+    ax.scatter(df[0], df[1], color='dimgray', label='Pointset')
+    ax.scatter(s[0], s[1], color='dodgerblue', label='MR_kCenterOutliers centers')
+    ax.scatter(s_seq[0], s_seq[1], color='limegreen', label='Sequential Algorithm centers')
+
+    if common_centers != []:
+        common_centers = pd.DataFrame(common_centers)
+        ax.scatter(common_centers[0], common_centers[1], color='red')
+
+    ax.set_aspect('equal', adjustable='datalim')
+    plt.title(f'Centers comparison - k={k}, z={z}')
+    plt.legend(loc="upper left")
+    plt.show()
+
+
+
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# Method plot_cluster
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def plot_cluster(data,solution,outliers,k,z,r):
+    df = pd.DataFrame(data)
+    s = pd.DataFrame(solution)        
+
+    fig, ax = plt.subplots()
+    ax.scatter(df[0], df[1], color='dodgerblue', label='Pointset')
+    ax.scatter(s[0], s[1], color='red', label='Centers')
+    if outliers != []:
+        out = pd.DataFrame(outliers)
+        ax.scatter(out[0], out[1], color='limegreen', label='Outliers')
+    for i in range(len(solution)):
+        cir = plt.Circle(solution[i], radius=r*3, color='r',fill=False)
+        ax.set_aspect('equal', adjustable='datalim')
+        ax.add_patch(cir)
+    plt.title(f'k-center with z outliers - k={k}, z={z}, r={r}')
+    plt.legend(loc="upper left")
+    plt.show(block=False)
+
+
+
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# Method plot_coreset
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def plot_coreset(points,coreset,weights,solution,k,z):
+
+    points = points.collect()
+    df = pd.DataFrame(points)
+    s = pd.DataFrame(solution)
+    c = pd.DataFrame(coreset)      
+
+    fig, ax = plt.subplots()
+    ax.scatter(df[0], df[1], color='dimgray', label='Pointset')
+    ax.scatter(c[0], c[1], weights, color='dodgerblue', label='Coreset Points')
+    ax.scatter(s[0], s[1], color='red', label='Centers')
+
+    ax.set_aspect('equal', adjustable='datalim')    
+    plt.title(f'Centers and Coreset points - k={k}, z={z}')
+    plt.legend(loc="upper left")
+    plt.show(block=False)
+
+
 
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # Method strToVector: input reading
@@ -124,6 +215,7 @@ def MR_kCenterOutliers(points, k, z, L):
     #------------- ROUND 2 ---------------------------
 
     elems = coreset.collect()
+    print(elems)
     end_r1 = time.time()
 
     start_r2 = time.time()
@@ -145,6 +237,8 @@ def MR_kCenterOutliers(points, k, z, L):
 
     print("Time Round 1: ", str((end_r1-start_r1)*1000), " ms")
     print("Time Round 2: ", str((end_r2-start_r2)*1000), " ms")
+
+    plot_coreset(points, coresetPoints, coresetWeights, solution, k, z)
 
     return solution
 
@@ -224,7 +318,7 @@ def DistanceMatrix(x,y):
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # Method SeqWeightedOutliers: sequential k-center with outliers
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def SeqWeightedOutliers (points, weights, k, z, alpha):
+def SeqWeightedOutliers (points, weights, k, z, alpha, plot=False):
 
     # Precompute distances
     distance_matrix = DistanceMatrix(np.asarray(points), np.asarray(points))
@@ -272,6 +366,9 @@ def SeqWeightedOutliers (points, weights, k, z, alpha):
         
         if W_z <= z:
             print(f'Initial guess = {initial_r}\nFinal guess = {r}\nNumber of guesses = {n_guesses}')
+            if plot:
+                P_array = np.asarray(points)
+                plot_cluster(points,S,P_array[Z],k,z,r)
             return S
         else:
             r = 2*r
@@ -306,6 +403,18 @@ def computeObjectivePartition(iterator, centers, z):
 
     # return the biggest z+1 values in sorted_min_dist as a list
     return list(sorted_min_dist[-(z+1):])
+
+
+
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# Method computeObjective: computes objective function
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def ComputeObjectiveLocal(P,S,z):
+    distance_matrix = DistanceMatrix(np.asarray(P), np.asarray(S))
+    min_dist = distance_matrix.min(1).tolist()
+    for i in range(z):
+        min_dist.remove(max(min_dist))
+    return max(min_dist)
 
 
 
