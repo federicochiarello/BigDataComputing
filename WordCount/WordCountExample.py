@@ -4,10 +4,6 @@ import os
 import random as rand
 
 
-# os.environ['PYSPARK_PYTHON'] = sys.executable
-# os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
-
-
 def word_count_per_doc(document, K=-1):
 		pairs_dict = {}
 		for word in document.split(' '):
