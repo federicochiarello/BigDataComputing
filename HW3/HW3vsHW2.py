@@ -1,6 +1,16 @@
-# Import Packages
+# Comparison between the results of clustering in HW2 and HW3
+# 
+# The program also outputs 3 plots:
+#   - centers and coreset points from MR_kCenterOutliers
+#   - k-centers with z outliers from sequential algorithm
+#   - comparison between sequential alg. centers and MR_kCenterOutliers centers
+
+
 import findspark
 findspark.init()
+
+
+# Import Packages
 from pyspark import SparkConf, SparkContext
 import numpy as np
 import time
@@ -215,7 +225,7 @@ def MR_kCenterOutliers(points, k, z, L):
     #------------- ROUND 2 ---------------------------
 
     elems = coreset.collect()
-    print(elems)
+    # print(elems)
     end_r1 = time.time()
 
     start_r2 = time.time()

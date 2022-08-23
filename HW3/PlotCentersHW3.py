@@ -2,10 +2,6 @@ import findspark
 findspark.init()
 
 
-import pandas as pd
-import matplotlib.pyplot as plt
-
-
 # Import Packages
 from pyspark import SparkConf, SparkContext
 import numpy as np
@@ -13,34 +9,12 @@ import time
 import random
 import sys
 import math
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
-
-
-def plot_cluster(data,solution,outliers,k,z,r):
-    df = pd.DataFrame(data)
-    s = pd.DataFrame(solution)        
-
-    fig, ax = plt.subplots()
-    ax.scatter(df[0], df[1])
-    ax.scatter(s[0], s[1], color='red')
-    if outliers != []:
-        out = pd.DataFrame(outliers)
-        ax.scatter(out[0], out[1], color='green')
-    for i in range(len(solution)):
-        cir = plt.Circle(solution[i], radius=r*3, color='r',fill=False)
-        ax.set_aspect('equal', adjustable='datalim')
-        ax.add_patch(cir)
-    plt.title(f'k={k}   -   z={z}  -  r={r}')
-    plt.show()
-
-
-
-
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # MAIN PROGRAM
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def main():
     # Checking number of cmd line parameters
@@ -85,7 +59,6 @@ def main():
 
 
     ####################################################################################
-    # REMOVE
     start = time.time()
     inputPoints = inputPoints.collect()
     objective = computeObjective_local(inputPoints, solution, z)
@@ -97,10 +70,10 @@ def main():
 
 
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # AUXILIARY METHODS
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+
 
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # Method strToVector: input reading
@@ -132,6 +105,28 @@ def euclidean(point1,point2):
         diff = (point1[i]-point2[i])
         res +=  diff*diff
     return math.sqrt(res)
+
+
+
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# Method plot_center
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def plot_cluster(data,solution,outliers,k,z,r):
+    df = pd.DataFrame(data)
+    s = pd.DataFrame(solution)        
+
+    fig, ax = plt.subplots()
+    ax.scatter(df[0], df[1])
+    ax.scatter(s[0], s[1], color='red')
+    if outliers != []:
+        out = pd.DataFrame(outliers)
+        ax.scatter(out[0], out[1], color='green')
+    for i in range(len(solution)):
+        cir = plt.Circle(solution[i], radius=r*3, color='r',fill=False)
+        ax.set_aspect('equal', adjustable='datalim')
+        ax.add_patch(cir)
+    plt.title(f'k={k}   -   z={z}  -  r={r}')
+    plt.show()
 
 
 
